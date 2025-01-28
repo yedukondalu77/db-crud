@@ -13,20 +13,21 @@ app.get('/mobiles',(req,res)=>{
 })
 
 
-app.get('/mobiles/:id',(req,res)=>{
+app.get('/mobiles/:id', (req, res) => {
     db.Getmobiles(req.params.id)
-    .then((mobiles)=>res.json(mobiles))
-    .catch((err)=>res.send(err))
-})
+        .then((mobiles) => {
+            if (mobiles.length === 0) {
+                res.status(404).json({ error: `Mobile with id ${req.params.id} not found` });
+            } else {
+                res.json(mobiles);
+            }
+        })
+        .catch((err) => res.status(500).send(err));
+});
 
-// ADD MOBILES
-// app.post('/mobiles',(req,res)=>{
-//     db.Addmobiles(req.body.name,req.body.price,req.body.ram,req.body.storage)
-//     .then((result)=>res.json({ message: 'Person added successfully'}))
-//     .catch((error)=>res.send(error))
-// })
+
 app.post('/mobiles', (req, res) => {
-    const { name, price, ram, storage } = req.body; // Extract data from the request body
+    const { name, price, ram, storage } = req.body; 
 
     if (!name || !price || !ram || !storage) {
         return res.status(400).json({ error: 'All fields (name, price, ram, storage) are required' });
@@ -43,4 +44,65 @@ app.post('/mobiles', (req, res) => {
         });
 });
 
+
+// app.put('/mobiles/:id',(req,res)=>{
+//     db.Update(req.params.id,
+//         req.body.name,
+//         req.body.price,
+//         req.body.ram,
+//         req.body.storage
+//     )
+//     .then(()=>{
+//         res.json(req.body)
+//     })
+//     .catch((err) => {
+//         // If an error occurs, send the appropriate status code
+//         if (err === 404) {
+//             res.status(404).json({ error: 'Mobile not found' });
+//         } else if (err === 500) {
+//             res.status(500).json({ error: 'Internal Server Error' });
+//         } else {
+//             res.status(500).json({ error: 'Unknown error' });
+//         }
+//     });
+// })
+
+app.put('/mobiles/:id', (req, res) => {
+    
+    const { name, price, ram, storage } = req.body;
+    const { id } = req.params;  
+
+    db.Update(id, name, price, ram, storage)
+    .then(() => {
+
+        res.json({
+            message: `Mobile with ID ${id} updated successfully.`,
+            updatedMobile: req.body  
+        });
+    })
+    .catch((err) => {
+        if (err === 404) {
+            res.status(404).json({ error: `Mobile with id ${id} not found` });
+        } else if (err === 500) {
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            res.status(500).json({ error: 'Unknown error occurred' });
+        }
+    });
+});
+
+
+app.delete('/mobiles/:id',(req,res)=>{
+    const {id}=req.params;
+    db.Delete(id)
+    .then((result)=>{
+        if(result==204){
+            res.json({message:"mobile deleted"})
+        }
+        else {
+            res.status(404).json({ error: 'ID not Found', details: error });
+        }
+    })
+    .catch((err)=>res.send(err))
+})
 app.listen(PORT,()=>console.log(`server started at server started at http://localhost:${PORT}`))
